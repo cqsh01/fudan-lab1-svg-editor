@@ -1,0 +1,34 @@
+# A compact six-type gallery using only Phase 1 attributes.
+init 800 480
+create rect background 0 0 800 480 #f7f9fc
+create text heading 48 54 "SVG EDITOR / SIX PRIMITIVES"
+set heading fill #526177
+create g gallery
+create g rectangle-card in gallery
+create rect card-one 48 88 216 288 #ffffff in rectangle-card
+create rect sample-rect 90 148 132 84 #133f4b in rectangle-card
+create text rect-label 90 282 "01   rect + text" in rectangle-card
+set rect-label fill #133f4b
+create text rect-caption 90 311 "Precise. Addressable." in rectangle-card
+set rect-caption fill #66758c
+create g circle-card in gallery
+create rect card-two 292 88 216 288 #ffffff in circle-card
+create circle sample-circle 374 190 48 #dceee8 in circle-card
+create ellipse sample-ellipse 423 190 36 48 #c58d56 in circle-card
+create text circle-label 326 282 "02   circle + ellipse" in circle-card
+set circle-label fill #133f4b
+create text circle-caption 326 311 "Simple geometry." in circle-card
+set circle-caption fill #66758c
+create g line-card in gallery
+create rect card-three 536 88 216 288 #ffffff in line-card
+create line sample-line 572 216 716 160 #133f4b in line-card
+set sample-line stroke-width 3
+create circle start-dot 572 216 5 #c58d56 in line-card
+create circle end-dot 716 160 5 #c58d56 in line-card
+create text line-label 572 282 "03   line + group" in line-card
+set line-label fill #133f4b
+create text line-caption 572 311 "One tree. Many parts." in line-card
+set line-caption fill #66758c
+create text footer 48 430 "TypeScript / Command / Composite"
+set footer fill #66758c
+save examples/gallery.svg

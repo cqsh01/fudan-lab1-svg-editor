@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="480" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg">
+  <rect id="background" fill="#f7f9fc" x="0" y="0" width="800" height="480"/>
+  <text id="heading" fill="#526177" x="48" y="54">SVG EDITOR / SIX PRIMITIVES</text>
+  <g id="gallery">
+    <g id="rectangle-card">
+      <rect id="card-one" fill="#ffffff" x="48" y="88" width="216" height="288"/>
+      <rect id="sample-rect" fill="#133f4b" x="90" y="148" width="132" height="84"/>
+      <text id="rect-label" fill="#133f4b" x="90" y="282">01   rect + text</text>
+      <text id="rect-caption" fill="#66758c" x="90" y="311">Precise. Addressable.</text>
+    </g>
+    <g id="circle-card">
+      <rect id="card-two" fill="#ffffff" x="292" y="88" width="216" height="288"/>
+      <circle id="sample-circle" fill="#dceee8" cx="374" cy="190" r="48"/>
+      <ellipse id="sample-ellipse" fill="#c58d56" cx="423" cy="190" rx="36" ry="48"/>
+      <text id="circle-label" fill="#133f4b" x="326" y="282">02   circle + ellipse</text>
+      <text id="circle-caption" fill="#66758c" x="326" y="311">Simple geometry.</text>
+    </g>
+    <g id="line-card">
+      <rect id="card-three" fill="#ffffff" x="536" y="88" width="216" height="288"/>
+      <line id="sample-line" stroke="#133f4b" stroke-width="3" x1="572" y1="216" x2="716" y2="160"/>
+      <circle id="start-dot" fill="#c58d56" cx="572" cy="216" r="5"/>
+      <circle id="end-dot" fill="#c58d56" cx="716" cy="160" r="5"/>
+      <text id="line-label" fill="#133f4b" x="572" y="282">03   line + group</text>
+      <text id="line-caption" fill="#66758c" x="572" y="311">One tree. Many parts.</text>
+    </g>
+  </g>
+  <text id="footer" fill="#66758c" x="48" y="430">TypeScript / Command / Composite</text>
+</svg>

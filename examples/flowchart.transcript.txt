@@ -1,0 +1,39 @@
+canvas 800x360 created
+rect#background created
+text#heading created
+text#heading updated: fill="#66758c"
+text#caption created
+text#caption updated: fill="#66758c"
+g#flowchart created
+g#node1 created in g#flowchart
+rect#start created in g#node1
+text#start-label created in g#node1
+text#start-label updated: fill="#ffffff"
+g#node2 created in g#flowchart
+rect#process created in g#node2
+text#process-label created in g#node2
+text#process-label updated: fill="#133f4b"
+line#connector created in g#flowchart
+line#connector updated: stroke-width="2"
+line#arrow-top created in g#flowchart
+line#arrow-bottom created in g#flowchart
+line#arrow-top updated: stroke-width="2"
+line#arrow-bottom updated: stroke-width="2"
+g#node2 moved by (0,56)
+undone: move node2
+text#process-label updated: text="处理 / Process"
+svg (800x360)
+├── rect#background  x=0 y=0 w=800 h=360 fill=#f7f9fc
+├── text#heading  (56,58) "LAB 01 / A SMALL FLOW" fill=#66758c
+├── text#caption  (56,312) "Create. Compose. Move together. Undo with confidence." fill=#66758c
+└── g#flowchart
+    ├── g#node1
+    │   ├── rect#start  x=100 y=132 w=200 h=88 fill=#133f4b
+    │   └── text#start-label  (164,181) "开始 / Start" fill=#ffffff
+    ├── g#node2
+    │   ├── rect#process  x=500 y=132 w=200 h=88 fill=#dceee8
+    │   └── text#process-label  (542,181) "处理 / Process" fill=#133f4b
+    ├── line#connector  (300,176) -> (500,176) stroke=#5b8c7c stroke-width=2
+    ├── line#arrow-top  (490,168) -> (500,176) stroke=#5b8c7c stroke-width=2
+    └── line#arrow-bottom  (490,184) -> (500,176) stroke=#5b8c7c stroke-width=2
+saved to examples/flowchart.svg (13 elements)

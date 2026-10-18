@@ -82,3 +82,10 @@ test('file IO saves atomically, reports failures, and cleans temporary files', a
     assert.deepEqual((await readdir(directory)).filter(name => !name.startsWith('._')), ['with space.svg']);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
+
+test('text with carriage returns, newlines, tabs and Unicode separators survives XML normalization', () => {
+  const document = new SvgDocument();
+  const text = 'A\rB\nC\tD\u0085E\u2028F';
+  document.add(new Text('t', 0, 0, text));
+  assert.equal(codec.decode(codec.encode(document)).document.find('t').textContent, text);
+});

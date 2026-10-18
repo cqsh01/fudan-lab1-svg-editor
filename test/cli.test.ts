@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { join } from 'node:path';
 import { Cli } from '../src/cli/Cli.js';
 import { Tokenizer } from '../src/cli/Tokenizer.js';
 import { EditorSession } from '../src/application/EditorSession.js';
@@ -89,4 +91,36 @@ test('stdin scripts continue after errors and return failure status; clean scrip
   assert.equal(clean.status, 0);
   assert.equal(clean.stdout, 'canvas 800x600 created\n');
   assert.equal(clean.stderr, '');
+});
+
+test('read fixture warns once, save and read round-trip, and IO blocks both history directions', async () => {
+  const { session, cli } = setup();
+  const read = await cli.execute('read test/fixtures/other.svg');
+  assert.equal(read.error, undefined);
+  assert.equal(read.output[0], 'warning: assigned id rect1 to unnamed <rect>');
+  assert.equal(session.document.count, 7);
+  assert.equal((await cli.execute('undo')).error, 'error: undo not allowed after io command');
+  await cli.execute('move c1 30 0');
+  const before = await cli.execute('tree');
+  const failed = await cli.execute('read test/fixtures/not-present.svg');
+  assert.equal(failed.error, 'error: cannot read file: test/fixtures/not-present.svg');
+  assert.deepEqual((await cli.execute('tree')).output, before.output);
+  assert.equal((await cli.execute('undo')).error, undefined);
+  assert.equal(session.document.find('c1').attributes.cx, '50');
+});
+
+
+test('example scripts reproduce their committed SVG outputs through the real CLI', async () => {
+  const directory = await mkdtemp(join(process.cwd(), 'test/.replay-'));
+  try {
+    for (const name of ['flowchart', 'gallery']) {
+      const path = join(directory, `${name}.svg`);
+      const script = (await readFile(`examples/${name}.commands`, 'utf8'))
+        .replace(`save examples/${name}.svg`, `save "${path}"`);
+      const result = spawnSync(process.execPath, ['dist/src/cli/Main.js'], { input: script, encoding: 'utf8' });
+      assert.equal(result.status, 0, result.stderr);
+      assert.equal(result.stderr, '');
+      assert.equal(await readFile(path, 'utf8'), await readFile(`examples/${name}.svg`, 'utf8'));
+    }
+  } finally { await rm(directory, { recursive: true, force: true }); }
 });

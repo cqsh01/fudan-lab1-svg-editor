@@ -1,0 +1,27 @@
+# Lab 1 · Two nodes, one composite scene. Run from the project directory.
+init 800 360
+create rect background 0 0 800 360 #f7f9fc
+create text heading 56 58 "LAB 01 / A SMALL FLOW"
+set heading fill #66758c
+create text caption 56 312 "Create. Compose. Move together. Undo with confidence."
+set caption fill #66758c
+create g flowchart
+create g node1 in flowchart
+create rect start 100 132 200 88 #133f4b in node1
+create text start-label 164 181 "开始 / Start" in node1
+set start-label fill #ffffff
+create g node2 in flowchart
+create rect process 500 132 200 88 #dceee8 in node2
+create text process-label 542 181 "处理 / Process" in node2
+set process-label fill #133f4b
+create line connector 300 176 500 176 #5b8c7c in flowchart
+set connector stroke-width 2
+create line arrow-top 490 168 500 176 #5b8c7c in flowchart
+create line arrow-bottom 490 184 500 176 #5b8c7c in flowchart
+set arrow-top stroke-width 2
+set arrow-bottom stroke-width 2
+move node2 0 56
+undo
+set process-label text "处理 / Process"
+tree
+save examples/flowchart.svg

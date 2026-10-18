@@ -14,7 +14,10 @@ export class SvgCodec {
     if (/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(source)) throw new Error('invalid SVG: DTD and entities are unsupported');
     let xml: XmlDocument;
     try {
-      xml = new DOMParser({ onError: (_level, message) => { throw new Error(message); } }).parseFromString(source, 'application/xml');
+      xml = new DOMParser({
+        onError: (_level, message) => { throw new Error(message); },
+        normalizeLineEndings: input => input.replace(/\r\n?/g, '\n'),
+      }).parseFromString(source, 'application/xml');
     } catch {
       throw new Error('invalid SVG: malformed XML');
     }
@@ -53,7 +56,9 @@ export class SvgCodec {
       root.appendChild(this.writeShape(xml, child, 1));
     }
     if (document.children.length) root.appendChild(xml.createTextNode('\n'));
-    return `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(xml)}\n`;
+    // Literal CR is normalized by XML readers; a character reference preserves it.
+    const serialized = new XMLSerializer().serializeToString(xml).replace(/\r/g, '&#13;');
+    return `<?xml version="1.0" encoding="UTF-8"?>\n${serialized}\n`;
   }
 
   private readShape(element: Element, used: Set<string>, counters: Map<string, number>, warnings: string[]): Shape {

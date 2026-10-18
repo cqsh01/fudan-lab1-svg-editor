@@ -1,0 +1,33 @@
+canvas 800x480 created
+rect#background created
+text#heading created
+text#heading updated: fill="#526177"
+g#gallery created
+g#rectangle-card created in g#gallery
+rect#card-one created in g#rectangle-card
+rect#sample-rect created in g#rectangle-card
+text#rect-label created in g#rectangle-card
+text#rect-label updated: fill="#133f4b"
+text#rect-caption created in g#rectangle-card
+text#rect-caption updated: fill="#66758c"
+g#circle-card created in g#gallery
+rect#card-two created in g#circle-card
+circle#sample-circle created in g#circle-card
+ellipse#sample-ellipse created in g#circle-card
+text#circle-label created in g#circle-card
+text#circle-label updated: fill="#133f4b"
+text#circle-caption created in g#circle-card
+text#circle-caption updated: fill="#66758c"
+g#line-card created in g#gallery
+rect#card-three created in g#line-card
+line#sample-line created in g#line-card
+line#sample-line updated: stroke-width="3"
+circle#start-dot created in g#line-card
+circle#end-dot created in g#line-card
+text#line-label created in g#line-card
+text#line-label updated: fill="#133f4b"
+text#line-caption created in g#line-card
+text#line-caption updated: fill="#66758c"
+text#footer created
+text#footer updated: fill="#66758c"
+saved to examples/gallery.svg (22 elements)
