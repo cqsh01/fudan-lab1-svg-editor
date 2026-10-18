@@ -18,6 +18,7 @@ export abstract class GeometryShape extends Shape {
   }
 
   protected value(key: string): number { return this.geometry.get(key)!; }
+  override get creationStyle(): string | undefined { return 'fill'; }
 
   override get attributes(): Readonly<Record<string, string>> {
     return { ...super.attributes, ...Object.fromEntries([...this.geometry].map(([key, value]) => [key, Numbers.format(value)])) };

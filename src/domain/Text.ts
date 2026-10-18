@@ -3,6 +3,7 @@ import { Shape } from './Shape.js';
 
 export class Text extends GeometryShape {
   readonly type = 'text';
+  override get creationStyle(): undefined { return undefined; }
   private content: string;
   constructor(id: string, x: number, y: number, content: string) {
     super(id, { x, y }, ['x'], ['y'], []);

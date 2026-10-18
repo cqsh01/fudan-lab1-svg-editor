@@ -17,6 +17,7 @@ export abstract class Shape {
   get label(): string { return `${this.type}#${this.id}`; }
   get children(): readonly Shape[] { return []; }
   get textContent(): string | undefined { return undefined; }
+  get creationStyle(): string | undefined { return undefined; }
   get attributes(): Readonly<Record<string, string>> {
     return { id: this.id, ...Object.fromEntries(this.styles) };
   }
