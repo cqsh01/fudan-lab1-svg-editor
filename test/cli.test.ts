@@ -93,20 +93,35 @@ test('stdin scripts continue after errors and return failure status; clean scrip
   assert.equal(clean.stderr, '');
 });
 
-test('read fixture warns once, save and read round-trip, and IO blocks both history directions', async () => {
+test('read warns, failed reads preserve history, save reuses its path and successful IO blocks undo/redo', async () => {
   const { session, cli } = setup();
-  const read = await cli.execute('read test/fixtures/other.svg');
-  assert.equal(read.error, undefined);
-  assert.equal(read.output[0], 'warning: assigned id rect1 to unnamed <rect>');
-  assert.equal(session.document.count, 7);
-  assert.equal((await cli.execute('undo')).error, 'error: undo not allowed after io command');
-  await cli.execute('move c1 30 0');
-  const before = await cli.execute('tree');
-  const failed = await cli.execute('read test/fixtures/not-present.svg');
-  assert.equal(failed.error, 'error: cannot read file: test/fixtures/not-present.svg');
-  assert.deepEqual((await cli.execute('tree')).output, before.output);
-  assert.equal((await cli.execute('undo')).error, undefined);
-  assert.equal(session.document.find('c1').attributes.cx, '50');
+  const directory = await mkdtemp(join(process.cwd(), 'test/.io-'));
+  try {
+    const read = await cli.execute('read test/fixtures/other.svg');
+    assert.equal(read.error, undefined);
+    assert.equal(read.output[0], 'warning: assigned id rect1 to unnamed <rect>');
+    assert.equal(session.document.count, 7);
+    assert.equal((await cli.execute('undo')).error, 'error: undo not allowed after io command');
+    await cli.execute('move c1 30 0');
+    const before = await cli.execute('tree');
+    const failed = await cli.execute('read test/fixtures/not-present.svg');
+    assert.equal(failed.error, 'error: cannot read file: test/fixtures/not-present.svg');
+    assert.deepEqual((await cli.execute('tree')).output, before.output);
+    assert.equal((await cli.execute('undo')).error, undefined);
+    assert.equal(session.document.find('c1').attributes.cx, '50');
+    const path = join(directory, 'saved file.svg');
+    assert.equal((await cli.execute(`save "${path}"`)).error, undefined);
+    for (const command of ['undo', 'redo']) {
+      assert.equal((await cli.execute(command)).error, 'error: undo not allowed after io command');
+    }
+    await cli.execute('move c1 5 0');
+    assert.equal((await cli.execute('save')).error, undefined);
+    assert.match(await readFile(path, 'utf8'), /cx="55"/);
+    assert.equal((await cli.execute(`read "${path}"`)).error, undefined);
+    assert.equal(session.document.find('c1').attributes.cx, '55');
+    await cli.execute('init');
+    assert.equal((await cli.execute('save')).error, 'error: no file path. use save <file.svg>');
+  } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
 

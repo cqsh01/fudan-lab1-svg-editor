@@ -1,0 +1,24 @@
+@startuml
+skinparam backgroundColor #F7F9FC
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam ArrowColor #5B8C7C
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #133F4B
+  FontColor #133F4B
+}
+left to right direction
+component "CLI\nTokenizer / CommandParser" as CLI
+component "Application\nCommands / Session / History" as App
+component "Domain\nShape / Group / SvgDocument" as Domain
+interface "SvgStore" as Port
+component "Infrastructure\nFileSvgStore / SvgCodec" as IO
+CLI --> App
+App --> Domain
+App --> Port
+IO ..|> Port
+IO --> Domain
+note bottom of CLI : Main 是组合根，注入 IO 实现
+@enduml
