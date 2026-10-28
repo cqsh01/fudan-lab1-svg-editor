@@ -5,6 +5,7 @@ import { parseArgs } from 'node:util';
 import { EditorSession } from '../application/EditorSession.js';
 import { ConsoleTerminal } from '../infrastructure/ConsoleTerminal.js';
 import { FileRecoveryStore } from '../infrastructure/FileRecoveryStore.js';
+import { PreviewServer } from '../infrastructure/PreviewServer.js';
 import { FileSvgStore } from '../infrastructure/FileSvgStore.js';
 import { Cli } from './Cli.js';
 import { CommandParser } from './CommandParser.js';
@@ -18,18 +19,24 @@ export class Main {
     try {
       const { values } = parseArgs({ options: {
         help: { type: 'boolean', short: 'h' }, version: { type: 'boolean', short: 'v' },
+        preview: { type: 'boolean' }, port: { type: 'string' },
         recover: { type: 'boolean' }, 'recovery-dir': { type: 'string' }, 'discard-unsaved': { type: 'boolean' },
       } });
       const metadata = JSON.parse(await readFile(new URL('../../../package.json', import.meta.url), 'utf8')) as { version: string };
       if (values.help) { process.stdout.write(`${new LaunchHelp().render().join('\n')}\n`); return; }
       if (values.version) { process.stdout.write(`${metadata.version}\n`); return; }
+      const port = values.port === undefined ? 0 : Number(values.port);
+      if (values.port !== undefined && (!/^\d+$/.test(values.port) || !Number.isInteger(port) || port < 0 || port > 65535)) {
+        throw new Error('port must be an integer between 0 and 65535');
+      }
+      if (values.port !== undefined && !values.preview) throw new Error('--port requires --preview');
       const terminal = new ConsoleTerminal();
       const session = new EditorSession(new FileSvgStore());
       const guard = terminal.interactive && !values['discard-unsaved'] ? new UnsavedChangesGuard(session, terminal) : undefined;
       const recoveryDirectory = resolve(values['recovery-dir'] ?? join(process.cwd(), '.svg-editor/recovery'));
       const recovery = terminal.interactive || values.recover ? new FileRecoveryStore(recoveryDirectory) : undefined;
       const cli = new Cli(session, new CommandParser(), guard);
-      const shell = new EditorShell(session, terminal, cli, recovery, undefined, {
+      const shell = new EditorShell(session, terminal, cli, recovery, values.preview ? new PreviewServer(session, port) : undefined, {
         recover: Boolean(values.recover), discardOnExit: Boolean(values['discard-unsaved']),
         recoveryCommand: `svg-editor --recover --recovery-dir ${JSON.stringify(recoveryDirectory)}`,
       });
