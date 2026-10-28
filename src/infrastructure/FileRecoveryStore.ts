@@ -17,6 +17,7 @@ export class FileRecoveryStore implements RecoveryStore {
   async save(document: SvgDocument, originalPath?: string): Promise<void> {
     await mkdir(this.directory, { recursive: true, mode: 0o700 });
     const source = JSON.stringify({ version: 1, originalPath: originalPath === undefined ? undefined : resolve(originalPath), svg: this.codec.encode(document) });
+    if (Buffer.byteLength(source, 'utf8') > 16 * 1024 * 1024) throw new Error('recovery draft exceeds 16 MiB');
     await this.writer.write(this.location, source);
   }
   async recoverLatest(): Promise<{ document: SvgDocument; originalPath?: string }> {

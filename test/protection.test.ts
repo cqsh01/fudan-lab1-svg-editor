@@ -106,3 +106,30 @@ test('backup failure never misreports a successful edit as a command failure, bu
     assert.equal(await new EditorShell(session, interrupted, new Cli(session), new FileRecoveryStore(directory)).run(), 130);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
+
+test('confirmed replacement that fails preserves the old document and its undo history', async () => {
+  const session = new EditorSession(new FileSvgStore());
+  const terminal = new ScriptTerminal(['discard']);
+  const cli = new Cli(session, new CommandParser(), new UnsavedChangesGuard(session, terminal));
+  await cli.execute('init');
+  await cli.execute('create rect r 1 2 3 4');
+  const revision = session.revision;
+  assert.match((await cli.execute('read test/fixtures/absent.svg')).error ?? '', /cannot read file/);
+  assert.equal(session.document.find('r').attributes.x, '1');
+  assert.equal(session.dirty, true);
+  assert.equal(session.revision, revision);
+  assert.equal((await cli.execute('undo')).error, undefined);
+  assert.equal(session.document.count, 0);
+});
+
+test('explicit discard-on-exit bypasses recovery retention, while cancelled exit keeps editing', async () => {
+  const directory = await mkdtemp(join(process.cwd(), 'test/.shell-'));
+  try {
+    const session = new EditorSession(new FileSvgStore());
+    const terminal = new ScriptTerminal(['init', 'exit', '', 'create rect r 1 2 3 4']);
+    const cli = new Cli(session, new CommandParser(), new UnsavedChangesGuard(session, terminal));
+    await new EditorShell(session, terminal, cli, new FileRecoveryStore(directory), undefined, { discardOnExit: true }).run();
+    assert.equal(session.document.count, 1);
+    assert.deepEqual((await readdir(directory)).filter(name => !name.startsWith('._')), []);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
