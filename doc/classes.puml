@@ -72,4 +72,20 @@ EditCommand "1" *-- "0..2" SvgDocument : mementos
 EditorShell --> EditorSession
 EditorShell --> UnsavedChangesGuard : via Cli
 note bottom of EditorShell : Terminal, RecoveryStore and Preview\nare injected ports; no fs / http imports
+class Token {
+  - source : string
+  + quoted : boolean
+  + value : string
+  + pathValue : string
+}
+class Tokenizer {
+  + tokenize(line) : Token[]
+}
+class CommandParser {
+  + parse(line) : Command
+}
+CommandParser --> Tokenizer : scan
+Tokenizer ..> Token : create
+CommandParser --> Token : choose path / text
+CommandParser ..> Command : construct
 @enduml

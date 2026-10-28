@@ -1,8 +1,8 @@
 # Lab 1 · SVG 编辑器技术文档
 
-仓库：[cqsh01/fudan-lab1-svg-editor](https://github.com/cqsh01/fudan-lab1-svg-editor)（私有）。当前版本 **0.2.0**；本轮修订日期 **2026-10-28**。原始要求保留在 `phase_cli_1.md`。
+仓库：[cqsh01/fudan-lab1-svg-editor](https://github.com/cqsh01/fudan-lab1-svg-editor)（私有）。当前版本 **0.2.1**；本轮修订日期 **2026-10-28**。原始要求保留在 `phase_cli_1.md`。
 
-本次 Lab1 对应已发布的 Phase 1 CLI 要求。0.2.0 在原有六种图元和全部编辑命令之上，增加安装入口、未保存保护与恢复、只读预览。设计目标是让使用者可以独立启动、确认修改结果，并在操作失误或进程中断后找回已备份内容。它没有增加鼠标编辑或插件系统。
+本次 Lab1 对应已发布的 Phase 1 CLI 要求。0.2.0 在原有六种图元和全部编辑命令之上，增加安装入口、未保存保护与恢复、只读预览。设计目标是让使用者可以独立启动、确认修改结果，并在操作失误或进程中断后找回已备份内容。它没有增加鼠标编辑或插件系统。0.2.1 修复原生 Windows 路径与文本转义混用的问题，并补充真实 CMD 入口验收。
 
 ## 架构方案
 
@@ -44,6 +44,8 @@ PlantUML 图源：[architecture.puml](architecture.puml)。完整[关系视图�
 
 本轮没有为了展示模式而引入额外事件总线。预览采用定时读取快照；Shell 根据 revision 判断是否需要更新草稿，已经能满足当前规模。
 
+Tokenizer 只识别分词边界，Token 是保留原文的不可变值对象。CommandParser 的 read/save 构造器使用 pathValue，其余参数使用 value 解码文本转义；Token 不识别命令名。
+
 命令名只在 CommandParser 分派，图形类型名只在 ShapeFactory 分派。命令的替换/退出能力通过多态属性表达，确认保护不重新比较命令名。启动参数由 Node 的 parseArgs 解析，不另建编辑命令分派点。按照原要求，两个内置注册表仍登记为插件化阶段的待重构点。
 
 ### 依赖方向规则
@@ -81,7 +83,7 @@ PlantUML 图源：[architecture.puml](architecture.puml)。完整[关系视图�
 - 数字必须有限；几何尺寸、半径和描边可为 0、不可为负；画布宽高为正。
 - 每个成功编辑一个 undo 单元，失败不改状态或历史。undo 后的新编辑清空 redo。
 - 成功 init/read/save/修改尺寸的 canvas 清空历史并设置屏障；下一次成功编辑解除。查询 canvas、tree、show、help、status 和预览不改变历史。
-- save 无参数使用最近一次成功 read/save 的路径；init 清除路径。相对路径以当前工作目录为准。
+- save 无参数使用最近一次成功 read/save 的路径；init 清除路径。相对路径以当前工作目录为准。read/save 的引号内路径保留原生反斜杠，包括盘符、相对路径和 UNC；不会把路径中的 `\n`、`\t` 当作换行/制表符。路径中仅 `\"` 表示字面引号，其余反斜杠不解码。文本参数继续遵守原有转义协议。
 - `svg>` 提示符、双引号转义、整行 # 注释及 `error:` 单行错误协议保持。普通 stdin 脚本错误后继续，最后返回非零状态。
 
 ### 保存基线、保护和恢复
@@ -128,6 +130,7 @@ transform、style/CSS、字体属性、path/use/defs、tspan、非等比例 view
 | 10/28 · 成果保护 | init/read/退出可丢弃未保存编辑 | 基线内容比较、统一替换能力、交互确认、独立恢复端口；实际测试取消后状态和 redo 不变 |
 | 10/28 · 恢复 | 备份失败不能误报编辑失败；同时恢复不能共享一个草稿 | 草稿失败输出 warning；完整验证后 rename 认领，保存/放弃只清理本会话文件 |
 | 10/28 · 预览 | 手动保存看效果会触发课程历史屏障 | 通过 PreviewSource 读取内存副本；实际浏览器验证刷新、撤销后的 saved 状态和大小切换 |
+| 10/28 · 路径修复 | 复查发现双引号内的 Windows 路径被统一文本解码；旧 Windows 包检查只直接调用 JS | Token 保留词法原文，read/save 选择路径值；新增盘符、UNC、中文空格和文本回归，并通过 cmd.exe 运行已安装 .cmd 与 CRLF 脚本 |
 | 10/28 · 验证修订 | fetch 会改写测试中的 Host，旧架构正则也扫描到模板内 JS | 使用原始 HTTP 请求验证 Host；页面代码整理为可读模板，保留架构扫描能力边界 |
 
 这些是实际对话、实现和检查记录，未代写未经发生的用户试用反馈。分步 Git 提交体现推进过程；同一场会话中的多次提交不等于多次课堂评审。
@@ -140,6 +143,7 @@ transform、style/CSS、字体属性、path/use/defs、tspan、非等比例 view
 - DocumentFormatter 仍为应用层只依赖领域的文本输出服务。
 - Main 是唯一组合根；EditorShell 和 UnsavedChangesGuard 不导入文件系统或 HTTP。
 - PreviewServer 只依赖 PreviewSource 端口，不直接依赖 EditorSession；草稿与保存复用基础设施内部 AtomicFileWriter。
+- Token 从接口改为不可变值对象，只负责参数表示与两种取值策略；CLI 模块方向与两个名字分派点保持不变。
 - 发布校验放在 tools，不把开发工具带入安装包；用户现有 demo.svg 不修改、不提交、不打包。
 
 依赖规则由 architecture.test.ts 检查。人工抽查：MoveCommand → EditCommand/SvgDocument；EditorSession → SvgStore/PreviewSource；EditorShell → 应用端口；FileRecoveryStore → RecoveryStore/SvgCodec/AtomicFileWriter；PreviewServer → Preview/PreviewSource/SvgCodec/PreviewPage。未发现逆向业务依赖。
@@ -164,7 +168,7 @@ npm run test:package
 
 ## 交付资料
 
-Git 标签保留原始基线 `v0.1.0` 与本轮改进版 `v0.2.0`；课程当前交付标签 `final` 指向经过验证的本轮版本。提交历史保留每个阶段的实际推进，不改写原有提交。
+Git 标签保留原始基线 `v0.1.0`、可用性改进版 `v0.2.0` 与路径修复版 `v0.2.1`；课程当前交付标签 `final` 指向经过验证的本轮版本。提交历史保留每个阶段的实际推进，不改写原有提交。
 
 
 - [根 README](../README.md)：安装、运行、保存、恢复、预览与脚本使用。

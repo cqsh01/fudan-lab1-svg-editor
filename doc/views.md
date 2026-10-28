@@ -1,4 +1,4 @@
-# 关系视图与 UML · 0.2.0
+# 关系视图与 UML · 0.2.1
 
 本页中的四组图对应当前代码。图源为 PlantUML，导出 SVG 随仓库与安装包提供，无需安装绘图工具即可查看。
 
@@ -12,7 +12,7 @@
 
 ![核心类图](classes.svg)
 
-[classes.puml](classes.puml) 表达 Shape 继承层次、Group 的递归组合、SvgDocument 与根 Group、会话保存基线、命令快照和历史栈。图中没有展开全部命令类，具体命令继承 Command 或 EditCommand，均各自独立一个文件。
+[classes.puml](classes.puml) 表达 Shape 继承层次、Group 的递归组合、SvgDocument 与根 Group、会话保存基线、命令快照和历史栈。输入层同时展示 Tokenizer → Token → CommandParser：词法原文保留在不可变 Token 中，read/save 选择路径值，其他参数选择文本值。图中没有展开全部命令类，具体命令继承 Command 或 EditCommand，均各自独立一个文件。
 
 EditorSession 中的 current 和 saved 是当前文档与最后成功读入/保存的基线；EditCommand.before/after 是独立的历史快照。恢复草稿不会恢复进程内的 CommandHistory。
 
@@ -35,3 +35,5 @@ EditorSession 中的 current 和 saved 是当前文档与最后成功读入/保�
 新增 Terminal / RecoveryStore / Preview / PreviewSource 四个端口，Main 原有 readline 职责移入 ConsoleTerminal，交互循环移入 EditorShell。SVG 保存与草稿共用 AtomicFileWriter。Shape 的 Command/Composite 结构保持，SvgDocument 新增内容比较以准确计算 dirty。
 
 图中所有关系均对应真实代码；布局和说明不代表额外的插件、网络编辑或鼠标编辑能力。
+
+0.2.1 没有改变模块方向、IO 端口或会话时序；核心类图新增三个输入层类及其依赖，用于说明路径修复。

@@ -1,6 +1,6 @@
 {
   "name": "lab1-svg-editor",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "A small, object-oriented SVG editor with a scriptable CLI.",
   "type": "module",

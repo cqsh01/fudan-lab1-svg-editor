@@ -2,7 +2,7 @@
 
 一个可以独立安装、支持脚本回放的 SVG 命令行编辑器。使用 TypeScript、Command 与 Composite 模式实现；现在提供未保存保护、恢复草稿和只读实时预览。
 
-**私有仓库：[cqsh01/fudan-lab1-svg-editor](https://github.com/cqsh01/fudan-lab1-svg-editor)** · 当前版本：`0.2.0`
+**私有仓库：[cqsh01/fudan-lab1-svg-editor](https://github.com/cqsh01/fudan-lab1-svg-editor)** · 当前版本：`0.2.1`
 
 ## 从源码启动
 
@@ -39,7 +39,7 @@ saved to drawing.svg (2 elements)
 
 ```sh
 npm run package
-npm install --global ./lab1-svg-editor-0.2.0.tgz
+npm install --global ./lab1-svg-editor-0.2.1.tgz
 svg-editor --help
 svg-editor --preview
 ```
@@ -80,7 +80,7 @@ node dist/src/cli/Main.js < examples/gallery.commands
 # 安装后也可以：svg-editor < examples/flowchart.commands
 ```
 
-`#` 开头的整行是注释；文本和带空格的路径使用双引号。编辑器内的 Windows 路径可写成 `"C:/Users/name/drawing.svg"`，使用反斜杠时须按引号转义规则写成双反斜杠。输入 `help` 查看全部编辑命令，`tree` 查看结构，`exit` 结束会话。脚本模式不输出提示符，错误写入 stderr，继续处理后续行；有错误时返回非零退出码。
+`#` 开头的整行是注释；文本和带空格的路径使用双引号。`read/save` 的路径按字面值保留反斜杠，可直接写 `"C:\Users\name\My Art\drawing.svg"` 或 `"C:/Users/name/My Art/drawing.svg"`，不需要双写分隔符。输入 `help` 查看全部编辑命令，`tree` 查看结构，`exit` 结束会话。脚本模式不输出提示符，错误写入 stderr，继续处理后续行；有错误时返回非零退出码。
 
 [两节点流程图](examples/flowchart.svg)和[六种图元画廊](examples/gallery.svg)完全由编辑器生成，对应 `.commands` 与 `.transcript.txt` 提供可回放记录。
 
@@ -98,3 +98,15 @@ npm run test:package
 - [版本变更](doc/CHANGELOG.md)：本轮改进范围及保留的课程语义。
 
 本轮覆盖三项高优先级可用性改进。六种图元和 Phase 1 约定继续保留，box、插件系统和更广的 SVG 导入范围仍属于后续工作。所有项目文件位于 `lab1/`。
+
+## 文件路径与文本转义
+
+```text
+svg> read "C:\Users\Alice\My Art\demo.svg"
+svg> save "\\server\share\diagram.svg"
+svg> set title text "First\nSecond"
+```
+
+前两行的反斜杠是路径本身的一部分；最后一行的 `\n` 会成为文本换行。普通文本继续支持 `\"`、`\\`、`\n`、`\r`、`\t`；路径仅把用于保护引号的 `\"` 还原为引号，其余反斜杠原样保留。
+
+这些是进入程序后 `svg>` 提示符中的命令；CMD 启动行的引用规则由 CMD 处理。Windows 安装包验收通过真实 `cmd.exe` 执行 npm 生成的 `.cmd` 启动器，覆盖带中文和空格的安装目录、原生路径、UTF-8/CRLF 脚本及失败退出码。

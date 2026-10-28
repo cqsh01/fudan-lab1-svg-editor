@@ -1,4 +1,4 @@
-# 0.2.0 验收记录
+# 0.2.1 验收记录
 
 日期：2026-10-28。所有临时检查目录、草稿、安装前缀和图形输出都位于 lab1 内；用户现有 demo.svg 未修改。
 
@@ -7,8 +7,8 @@
 | 命令 | 本轮结果 | 作用 |
 | --- | --- | --- |
 | `npm run check` | 通过 | TypeScript 严格类型检查 |
-| `npm test` | **37 项全部通过** | 原有行为和新增入口、保护、恢复、预览、架构边界 |
-| `npm run test:package` | 通过 | 在全新临时前缀安装 tarball，仅使用运行依赖；验证 bin/help/version/stdin |
+| `npm test` | **46 项全部通过** | 原有行为和新增入口、保护、恢复、预览、架构边界 |
+| `npm run test:package` | 通过 | 在全新临时前缀安装 tarball，仅使用运行依赖；验证 bin/help/version/stdin，以及 Windows cmd.exe/.cmd、原生路径和 CRLF |
 | `git diff --check` | 通过 | 核对空白错误与补丁格式 |
 
 检查分布：
@@ -16,6 +16,7 @@
 - `domain.test.ts`：递归几何、结构顺序、循环、id、数值与克隆隔离。
 - `application.test.ts`：命令粒度、浮点恢复、原子失败、redo 分支、IO 屏障。
 - `cli.test.ts`：全部命令、六类型、in、引号、错误、真实文件、脚本退出码与示例逐字回放。
+- `paths.test.ts`：盘符、UNC、相对路径、中文/空格、文字转义隔离，以及真实原生文件路径往返。
 - `launch.test.ts`：独立 help/version、非法参数与预览端口验证。
 - `protection.test.ts`：dirty 基线、取消保护、确认后读取失败、退出/草稿生命周期、备份失败不误报编辑失败。
 - `recovery.test.ts`：独立草稿、验证后认领、损坏草稿保留、大小限制、旧检查点在失败后仍可使用。
@@ -49,6 +50,6 @@ SIGKILL / Ctrl+C 检查通过 PTY 子进程执行；保存目标和临时草稿�
 
 ## 平台覆盖与结果边界
 
-本地环境为 macOS、Node.js 25.1.0。CI 配置覆盖 ubuntu-latest / windows-latest 与 Node.js 22 / 24，均执行类型检查、37 项功能检查及安装包检查；实际结果见 [GitHub Actions](https://github.com/cqsh01/fudan-lab1-svg-editor/actions)。Windows 的交互终端体验尚未进行人工验证，自动化覆盖安装入口和非交互行为。
+本地环境为 macOS、Node.js 25.1.0。CI 配置覆盖 ubuntu-latest / windows-latest 与 Node.js 22 / 24，均执行类型检查、46 项功能检查及安装包检查；实际结果见 [GitHub Actions](https://github.com/cqsh01/fudan-lab1-svg-editor/actions)。Windows 包检查现通过真实 cmd.exe 执行已安装 .cmd 启动器，并验证中文/空格安装目录、原生文件路径、UTF-8/CRLF 脚本、特殊文本与失败退出码。Windows 的交互键盘和字体显示尚未进行人工验收，不能由非交互 CMD 检查推定。
 
 这些检查不表示已完成商业市场验证。当前 SVG 子集、全量快照、16 MiB 草稿和最后完整检查点的恢复边界均在 [主技术文档](README.md) 明确说明。
