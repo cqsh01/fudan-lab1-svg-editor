@@ -80,7 +80,7 @@ node dist/src/cli/Main.js < examples/gallery.commands
 # 安装后也可以：svg-editor < examples/flowchart.commands
 ```
 
-`#` 开头的整行是注释；文本和带空格的路径使用双引号。输入 `help` 查看全部编辑命令，`tree` 查看结构，`exit` 结束会话。脚本模式不输出提示符，错误写入 stderr，继续处理后续行；有错误时返回非零退出码。
+`#` 开头的整行是注释；文本和带空格的路径使用双引号。编辑器内的 Windows 路径可写成 `"C:/Users/name/drawing.svg"`，使用反斜杠时须按引号转义规则写成双反斜杠。输入 `help` 查看全部编辑命令，`tree` 查看结构，`exit` 结束会话。脚本模式不输出提示符，错误写入 stderr，继续处理后续行；有错误时返回非零退出码。
 
 [两节点流程图](examples/flowchart.svg)和[六种图元画廊](examples/gallery.svg)完全由编辑器生成，对应 `.commands` 与 `.transcript.txt` 提供可回放记录。
 
