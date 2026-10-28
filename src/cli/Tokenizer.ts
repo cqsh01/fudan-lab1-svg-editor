@@ -1,5 +1,6 @@
-import type { Token } from './Token.js';
+import { Token } from './Token.js';
 
+/** Recognizes boundaries and quotes; argument meaning belongs to the command. */
 export class Tokenizer {
   tokenize(line: string): readonly Token[] {
     if (line.trimStart().startsWith('#')) return [];
@@ -8,19 +9,15 @@ export class Tokenizer {
     while (index < line.length) {
       if (/\s/.test(line[index]!)) { index++; continue; }
       const quoted = line[index] === '"';
-      let value = '';
+      let source = '';
       if (quoted) {
         index++;
         let closed = false;
         while (index < line.length) {
           const character = line[index++]!;
           if (character === '"') { closed = true; break; }
-          if (character === '\\') {
-            const escaped = line[index++];
-            const escapes: Record<string, string> = { '"': '"', '\\': '\\', n: '\n', t: '\t', r: '\r' };
-            if (escaped === undefined || escapes[escaped] === undefined) throw new Error('invalid escape in quoted argument');
-            value += escapes[escaped];
-          } else value += character;
+          source += character;
+          if (character === '\\' && index < line.length) source += line[index++];
         }
         if (!closed) throw new Error('unterminated double quote');
         if (index < line.length && !/\s/.test(line[index]!)) throw new Error('expected space after quoted argument');
@@ -28,10 +25,10 @@ export class Tokenizer {
         while (index < line.length && !/\s/.test(line[index]!)) {
           const character = line[index++]!;
           if (character === '"') throw new Error('double quote must start an argument');
-          value += character;
+          source += character;
         }
       }
-      tokens.push({ value, quoted });
+      tokens.push(new Token(source, quoted));
     }
     return tokens;
   }

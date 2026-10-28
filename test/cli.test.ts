@@ -16,10 +16,11 @@ const setup = () => {
 test('tokenizer preserves quoted text, escapes, empty content and colors', () => {
   const tokenizer = new Tokenizer();
   assert.deepEqual(tokenizer.tokenize(' # comment'), []);
-  assert.deepEqual(tokenizer.tokenize('create text t 0 0 "A \\"B\\" \\\\ C\\n"').at(-1), { value: 'A "B" \\ C\n', quoted: true });
+  assert.equal(tokenizer.tokenize('create text t 0 0 "A \\"B\\" \\\\ C\\n"').at(-1)?.value, 'A "B" \\ C\n');
+  assert.throws(() => tokenizer.tokenize('set t text "\\q"').at(-1)?.value, /invalid escape/);
   assert.equal(tokenizer.tokenize('set t text ""').at(-1)?.value, '');
   assert.equal(tokenizer.tokenize('set r fill #ffffff').at(-1)?.value, '#ffffff');
-  for (const input of ['set t text "oops', 'help "a"b', 'help "\\q"', 'help a"b']) {
+  for (const input of ['set t text "oops', 'help "a"b', 'help a"b']) {
     assert.throws(() => tokenizer.tokenize(input));
   }
 });
@@ -110,14 +111,14 @@ test('read warns, failed reads preserve history, save reuses its path and succes
     assert.equal((await cli.execute('undo')).error, undefined);
     assert.equal(session.document.find('c1').attributes.cx, '50');
     const path = join(directory, 'saved file.svg');
-    assert.equal((await cli.execute(`save ${JSON.stringify(path)}`)).error, undefined);
+    assert.equal((await cli.execute(`save "${path}"`)).error, undefined);
     for (const command of ['undo', 'redo']) {
       assert.equal((await cli.execute(command)).error, 'error: undo not allowed after io command');
     }
     await cli.execute('move c1 5 0');
     assert.equal((await cli.execute('save')).error, undefined);
     assert.match(await readFile(path, 'utf8'), /cx="55"/);
-    assert.equal((await cli.execute(`read ${JSON.stringify(path)}`)).error, undefined);
+    assert.equal((await cli.execute(`read "${path}"`)).error, undefined);
     assert.equal(session.document.find('c1').attributes.cx, '55');
     await cli.execute('init');
     assert.equal((await cli.execute('save')).error, 'error: no file path. use save <file.svg>');
@@ -131,7 +132,7 @@ test('example scripts reproduce their committed SVG outputs through the real CLI
     for (const name of ['flowchart', 'gallery']) {
       const path = join(directory, `${name}.svg`);
       const script = (await readFile(`examples/${name}.commands`, 'utf8'))
-        .replace(`save examples/${name}.svg`, `save ${JSON.stringify(path)}`);
+        .replace(`save examples/${name}.svg`, `save "${path}"`);
       const result = spawnSync(process.execPath, ['dist/src/cli/Main.js'], { input: script, encoding: 'utf8' });
       assert.equal(result.status, 0, result.stderr);
       assert.equal(result.stderr, '');

@@ -40,11 +40,11 @@ export class CommandParser {
     });
     this.register('read', 'read <file.svg>', args => {
       this.arity(args, 1, 1, 'read <file.svg>');
-      return new ReadCommand(args[0]!.value);
+      return new ReadCommand(args[0]!.pathValue);
     });
     this.register('save', 'save [file.svg]', args => {
       this.arity(args, 0, 1, 'save [file.svg]');
-      return new SaveCommand(args[0]?.value);
+      return new SaveCommand(args[0]?.pathValue);
     });
     this.register('canvas', 'canvas [w h]', args => {
       if (args.length !== 0 && args.length !== 2) throw new Error('usage: canvas [w h]');
@@ -134,6 +134,7 @@ export class CommandParser {
       '  text     <x> <y> "content"', '  g        (empty container)', '',
       'Set: fill / stroke / stroke-width, own geometry, text content.',
       'Quotes: \\" / \\\\ / \\n / \\t / \\r. A line starting with # is a comment.',
+      'File paths keep backslashes literally; do not double Windows separators.',
       'IO commands clear history; canvas without arguments only displays size.', 'Use status to inspect unsaved changes. Use exit to close, or Ctrl+D to keep a recovery draft.'];
   }
   private create(input: readonly Token[]): CreateCommand {

@@ -29,7 +29,7 @@ test('dirty tracking follows save, edit, undo, redo and failed IO, with no false
     assert.equal(session.dirty, false);
     await cli.execute('init');
     assert.equal(session.dirty, true);
-    await cli.execute(`save ${JSON.stringify(join(directory, 'saved.svg'))}`);
+    await cli.execute(`save "${join(directory, 'saved.svg')}"`);
     assert.equal(session.dirty, false);
     await cli.execute('create rect r 1 2 3 4');
     assert.equal(session.dirty, true);
@@ -37,7 +37,7 @@ test('dirty tracking follows save, edit, undo, redo and failed IO, with no false
     assert.equal(session.dirty, false);
     await cli.execute('redo');
     assert.equal(session.dirty, true);
-    await cli.execute(`save ${JSON.stringify(join(directory, 'missing/x.svg'))}`);
+    await cli.execute(`save "${join(directory, 'missing/x.svg')}"`);
     assert.equal(session.dirty, true);
     const revision = session.revision;
     await cli.execute('tree');
@@ -46,7 +46,7 @@ test('dirty tracking follows save, edit, undo, redo and failed IO, with no false
     assert.equal(session.revision, revision);
     await cli.execute('canvas 900 700');
     assert.equal(session.dirty, true);
-    await cli.execute(`read ${JSON.stringify(join(directory, 'saved.svg'))}`);
+    await cli.execute(`read "${join(directory, 'saved.svg')}"`);
     assert.equal(session.dirty, false);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
@@ -77,7 +77,7 @@ test('EOF retains a recoverable draft, recovery restores it, save and explicit d
     assert.equal(await new EditorShell(session, terminal, cli, new FileRecoveryStore(drafts)).run(), 0);
     assert.match(terminal.errors.join('\n'), /unsaved changes kept/);
     const resumed = new EditorSession(new FileSvgStore());
-    const next = new ScriptTerminal([`save ${JSON.stringify(join(directory, 'saved.svg'))}`, 'exit']);
+    const next = new ScriptTerminal([`save "${join(directory, 'saved.svg')}"`, 'exit']);
     const nextCli = new Cli(resumed, new CommandParser(), new UnsavedChangesGuard(resumed, next));
     assert.equal(await new EditorShell(resumed, next, nextCli, new FileRecoveryStore(drafts), undefined, { recover: true }).run(), 0);
     assert.equal(resumed.document.find('t').textContent, 'Recover me');
