@@ -1,12 +1,11 @@
-import { randomUUID } from 'node:crypto';
-import { readFile, rename, unlink, writeFile } from 'node:fs/promises';
-import { basename, dirname, join } from 'node:path';
+import { readFile } from 'node:fs/promises';
 import type { SvgStore } from '../application/ports/SvgStore.js';
 import type { SvgDocument } from '../domain/SvgDocument.js';
 import { SvgCodec } from './SvgCodec.js';
+import { AtomicFileWriter } from './AtomicFileWriter.js';
 
 export class FileSvgStore implements SvgStore {
-  constructor(private readonly codec = new SvgCodec()) {}
+  constructor(private readonly codec = new SvgCodec(), private readonly writer = new AtomicFileWriter()) {}
 
   async read(path: string): Promise<{ document: SvgDocument; warnings: readonly string[] }> {
     let source: string;
@@ -17,14 +16,7 @@ export class FileSvgStore implements SvgStore {
 
   async write(path: string, document: SvgDocument): Promise<void> {
     const source = this.codec.encode(document);
-    const temporary = join(dirname(path), `.${basename(path)}.${randomUUID()}.tmp`);
-    try {
-      await writeFile(temporary, source, { encoding: 'utf8', flag: 'wx' });
-      await rename(temporary, path);
-    } catch {
-      throw new Error(`cannot write file: ${path}`);
-    } finally {
-      await unlink(temporary).catch(() => undefined);
-    }
+    try { await this.writer.write(path, source); }
+    catch { throw new Error(`cannot write file: ${path}`); }
   }
 }

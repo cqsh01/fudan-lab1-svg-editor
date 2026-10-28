@@ -25,6 +25,9 @@ export class SvgDocument {
     copy.root = this.root.clone();
     return copy;
   }
+  sameContent(other: SvgDocument): boolean {
+    return this.width === other.width && this.height === other.height && this.sameShapes(this.children, other.children);
+  }
   find(id: string): Shape {
     const shape = this.ordered().find(item => item.id === id);
     if (!shape) throw new Error(`no such shape: ${id}`);
@@ -109,6 +112,17 @@ export class SvgDocument {
   ordered(): readonly Shape[] { return this.flatten(this.children); }
   private flatten(items: readonly Shape[]): Shape[] {
     return items.flatMap(item => [item, ...this.flatten(item.children)]);
+  }
+  private sameShapes(left: readonly Shape[], right: readonly Shape[]): boolean {
+    return left.length === right.length && left.every((shape, index) => {
+      const candidate = right[index]!;
+      const attributes = shape.attributes;
+      const compared = candidate.attributes;
+      return shape.type === candidate.type && shape.textContent === candidate.textContent &&
+        Object.keys(attributes).length === Object.keys(compared).length &&
+        Object.entries(attributes).every(([key, value]) => compared[key] === value) &&
+        this.sameShapes(shape.children, candidate.children);
+    });
   }
   private parentOf(shape: Shape): Group {
     const parent = [this.root, ...this.ordered()].find(item => item.children.includes(shape));

@@ -8,6 +8,8 @@ import { CreateCommand } from '../application/commands/CreateCommand.js';
 import { DeleteCommand } from '../application/commands/DeleteCommand.js';
 import { FrontCommand } from '../application/commands/FrontCommand.js';
 import { GroupCommand } from '../application/commands/GroupCommand.js';
+import { ExitCommand } from '../application/commands/ExitCommand.js';
+import { StatusCommand } from '../application/commands/StatusCommand.js';
 import { HelpCommand } from '../application/commands/HelpCommand.js';
 import { InitCommand } from '../application/commands/InitCommand.js';
 import { MoveCommand } from '../application/commands/MoveCommand.js';
@@ -101,6 +103,14 @@ export class CommandParser {
       this.arity(args, 0, 0, 'redo');
       return new RedoCommand();
     });
+    this.register('status', 'status', args => {
+      this.arity(args, 0, 0, 'status');
+      return new StatusCommand();
+    });
+    this.register('exit', 'exit', args => {
+      this.arity(args, 0, 0, 'exit');
+      return new ExitCommand();
+    });
     this.register('help', 'help', args => {
       this.arity(args, 0, 0, 'help');
       return new HelpCommand(this.help());
@@ -124,7 +134,7 @@ export class CommandParser {
       '  text     <x> <y> "content"', '  g        (empty container)', '',
       'Set: fill / stroke / stroke-width, own geometry, text content.',
       'Quotes: \\" / \\\\ / \\n / \\t / \\r. A line starting with # is a comment.',
-      'IO commands clear history; canvas without arguments only displays size.', 'Ctrl+D to exit.'];
+      'IO commands clear history; canvas without arguments only displays size.', 'Use status to inspect unsaved changes. Use exit to close, or Ctrl+D to keep a recovery draft.'];
   }
   private create(input: readonly Token[]): CreateCommand {
     const syntax = 'create <type> <id> [params...] [in <containerId>]';
