@@ -6,3 +6,5 @@ coverage/
 *.textClipping
 examples/output/
 *.tmp
+.svg-editor/
+*.tgz

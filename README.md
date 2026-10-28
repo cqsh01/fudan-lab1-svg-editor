@@ -12,6 +12,7 @@
 
 ```sh
 npm ci
+npm run build
 npm run cli
 ```
 
