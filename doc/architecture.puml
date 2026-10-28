@@ -2,23 +2,48 @@
 skinparam backgroundColor #F7F9FC
 skinparam componentStyle rectangle
 skinparam shadowing false
-skinparam roundcorner 12
+skinparam roundcorner 10
 skinparam ArrowColor #5B8C7C
-skinparam component {
-  BackgroundColor #FFFFFF
-  BorderColor #133F4B
-  FontColor #133F4B
-}
+skinparam componentBackgroundColor #FFFFFF
+skinparam componentBorderColor #133F4B
+skinparam componentFontColor #133F4B
 left to right direction
-component "CLI\nTokenizer / CommandParser" as CLI
-component "Application\nCommands / Session / History" as App
+package "CLI" {
+  component "Main\ncomposition root" as Main
+  component "EditorShell / Cli\nUnsavedChangesGuard / Parser" as CommandUI
+}
+package "Application" {
+  component "EditorSession\nCommands / History" as App
+  interface "SvgStore" as Svg
+  interface "RecoveryStore" as Draft
+  interface "Terminal" as Term
+  interface "Preview" as View
+  interface "PreviewSource" as Source
+}
 component "Domain\nShape / Group / SvgDocument" as Domain
-interface "SvgStore" as Port
-component "Infrastructure\nFileSvgStore / SvgCodec" as IO
-CLI --> App
+package "Infrastructure" {
+  component "FileSvgStore\nSvgCodec" as IO
+  component "FileRecoveryStore\nAtomicFileWriter" as Recovery
+  component "ConsoleTerminal" as Console
+  component "PreviewServer\nPreviewPage" as HTTP
+}
+actor "Browser\nread-only view" as Browser
+Main --> CommandUI : inject adapters
+CommandUI --> App : execute
+CommandUI --> Term
+CommandUI --> Draft : checkpoint
+CommandUI --> View : start / stop
 App --> Domain
-App --> Port
-IO ..|> Port
+App --> Svg
+App ..|> Source
+IO ..|> Svg
 IO --> Domain
-note bottom of CLI : Main 是组合根，注入 IO 实现
+Recovery ..|> Draft
+Recovery --> Domain
+Console ..|> Term
+HTTP ..|> View
+HTTP --> Source : read snapshots
+HTTP --> Domain
+Browser --> HTTP : GET state / image
+note bottom of HTTP : 127.0.0.1 only; random URL\nno commands or file routes
 @enduml

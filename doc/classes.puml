@@ -1,0 +1,75 @@
+@startuml
+skinparam backgroundColor #F7F9FC
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam ArrowColor #5B8C7C
+skinparam classBackgroundColor #FFFFFF
+skinparam classBorderColor #133F4B
+skinparam classFontColor #133F4B
+hide empty members
+abstract class Shape {
+  - identifier : string
+  + move(dx, dy)
+  + scale(factor)
+  + set(attribute, value)
+  + clone() : Shape
+}
+abstract class GeometryShape
+class Rect
+class Circle
+class Ellipse
+class Line
+class Text
+class Group {
+  - items : Shape[]
+  + append(shape)
+  + remove(shape)
+}
+class SvgDocument {
+  - root : Group
+  + sameContent(other) : boolean
+  + clone() : SvgDocument
+}
+Shape <|-- GeometryShape
+Shape <|-- Group
+GeometryShape <|-- Rect
+GeometryShape <|-- Circle
+GeometryShape <|-- Ellipse
+GeometryShape <|-- Line
+GeometryShape <|-- Text
+Group "1" *-- "0..*" Shape : children
+SvgDocument "1" *-- "1" Group : root
+class EditorSession {
+  - current : SvgDocument
+  - saved : SvgDocument
+  - version : number
+  + dirty : boolean
+  + recover(document, path)
+  + previewSnapshot()
+}
+abstract class Command {
+  + replacesDocument : boolean
+  + endsSession : boolean
+  + execute(session)
+}
+abstract class EditCommand {
+  - before : SvgDocument
+  - after : SvgDocument
+  + undo(session)
+  + redo(session)
+}
+class CommandHistory
+class EditorShell {
+  - checkpointRevision : number
+  + run() : Promise<number>
+}
+class UnsavedChangesGuard
+Command <|-- EditCommand
+EditorSession "1" *-- "1" CommandHistory
+EditorSession "1" o-- "0..2" SvgDocument : current / baseline
+CommandHistory "1" o-- "0..*" EditCommand : past / future
+EditCommand "1" *-- "0..2" SvgDocument : mementos
+EditorShell --> EditorSession
+EditorShell --> UnsavedChangesGuard : via Cli
+note bottom of EditorShell : Terminal, RecoveryStore and Preview\nare injected ports; no fs / http imports
+@enduml

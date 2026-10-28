@@ -1,0 +1,54 @@
+@startuml
+skinparam backgroundColor #F7F9FC
+skinparam shadowing false
+skinparam ArrowColor #5B8C7C
+skinparam ParticipantBackgroundColor #FFFFFF
+skinparam ParticipantBorderColor #133F4B
+actor User
+participant ConsoleTerminal as Terminal
+participant EditorShell as Shell
+participant "Cli / UnsavedChangesGuard" as Cli
+participant EditorSession as Session
+participant "Command / History" as Command
+participant FileRecoveryStore as Draft
+participant PreviewServer as Preview
+actor Browser
+User -> Terminal : input a command
+Terminal -> Shell : readLine()
+Shell -> Cli : execute(line)
+opt init / read / exit AND unsaved changes
+  Cli -> Terminal : ask for explicit discard
+  Terminal -> User : discard or cancel?
+  alt cancel
+    User -> Terminal : Enter
+    Cli --> Shell : cancelled; no mutation
+  else discard
+    User -> Terminal : discard
+  end
+end
+group when command is allowed
+  Cli -> Command : execute(session)
+  Command -> Session : commit candidate / IO result
+  Session --> Command : revision and dirty state
+  Command --> Shell : result
+  opt revision changed
+    alt dirty
+      Shell -> Draft : atomic save(document, originalPath)
+    else clean
+      Shell -> Draft : clear this session's draft
+    end
+  end
+  Shell -> Terminal : print result, then prompt
+end
+loop browser polls while preview is running
+  Browser -> Preview : GET state
+  Preview -> Session : previewSnapshot()
+  Session --> Preview : defensive copy; no mutation
+  Preview --> Browser : status / dimensions / revision
+  opt document revision changed
+    Browser -> Preview : GET image.svg
+    Preview --> Browser : serialized SVG
+  end
+end
+note over Session,Preview : Preview never calls save and never changes history.
+@enduml

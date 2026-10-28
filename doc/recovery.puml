@@ -1,0 +1,39 @@
+@startuml
+skinparam backgroundColor #F7F9FC
+skinparam shadowing false
+skinparam ArrowColor #5B8C7C
+skinparam ParticipantBackgroundColor #FFFFFF
+skinparam ParticipantBorderColor #133F4B
+actor User
+participant "Original session" as Old
+participant FileRecoveryStore as Draft
+database "Session JSON draft" as File
+participant "New session --recover" as New
+participant EditorSession as Session
+User -> Old : edit
+Old -> Draft : checkpoint after successful change
+Draft -> File : atomic replacement
+alt EOF / Ctrl+C / interrupted process
+  Old --> User : draft retained (when graceful)
+else explicit exit + discard
+  Old -> Draft : clear()
+  Draft -> File : remove this session's draft
+end
+User -> New : svg-editor --recover
+New -> Draft : recoverLatest()
+Draft -> File : read latest complete JSON
+Draft -> Draft : validate version, path and SVG
+alt valid draft
+  Draft -> File : rename to claim a new session file
+  Draft --> New : document + original path
+  New -> Session : recover(); dirty = true
+  note over New,Session : Recovery starts a fresh history barrier.
+  User -> New : save target.svg
+  New -> Session : save()
+  Session --> New : success; dirty = false
+  New -> Draft : clear()
+else corrupt / unsupported / unavailable
+  Draft --> New : error; original draft retained
+  New --> User : recovery failed
+end
+@enduml
