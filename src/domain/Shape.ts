@@ -1,5 +1,6 @@
 import { Numbers } from './Numbers.js';
 import type { Group } from './Group.js';
+import type { ShapeVisitor } from './ShapeVisitor.js';
 
 /** The common component protocol. Attributes are exposed as defensive copies. */
 export abstract class Shape {
@@ -27,6 +28,7 @@ export abstract class Shape {
   abstract scale(factor: number): void;
   abstract clone(): Shape;
   abstract describe(): string;
+  abstract accept(visitor: ShapeVisitor): void;
 
   set(attribute: string, value: string): void {
     if (!['fill', 'stroke', 'stroke-width'].includes(attribute)) {

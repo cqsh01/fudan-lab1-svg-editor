@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { EditorSession } from '../application/EditorSession.js';
+import { TerminalView } from '../application/TerminalView.js';
 import { ConsoleTerminal } from '../infrastructure/ConsoleTerminal.js';
 import { FileRecoveryStore } from '../infrastructure/FileRecoveryStore.js';
 import { PreviewServer } from '../infrastructure/PreviewServer.js';
@@ -19,7 +20,7 @@ export class Main {
     try {
       const { values } = parseArgs({ options: {
         help: { type: 'boolean', short: 'h' }, version: { type: 'boolean', short: 'v' },
-        preview: { type: 'boolean' }, port: { type: 'string' },
+        preview: { type: 'boolean' }, port: { type: 'string' }, 'terminal-preview': { type: 'boolean' },
         recover: { type: 'boolean' }, 'recovery-dir': { type: 'string' }, 'discard-unsaved': { type: 'boolean' },
       } });
       const metadata = JSON.parse(await readFile(new URL('../../../package.json', import.meta.url), 'utf8')) as { version: string };
@@ -35,11 +36,13 @@ export class Main {
       const guard = terminal.interactive && !values['discard-unsaved'] ? new UnsavedChangesGuard(session, terminal) : undefined;
       const recoveryDirectory = resolve(values['recovery-dir'] ?? join(process.cwd(), '.svg-editor/recovery'));
       const recovery = terminal.interactive || values.recover ? new FileRecoveryStore(recoveryDirectory) : undefined;
-      const cli = new Cli(session, new CommandParser(), guard);
+      const view = new TerminalView(terminal);
+      const cli = new Cli(session, new CommandParser(undefined, undefined, view), guard);
       const shell = new EditorShell(session, terminal, cli, recovery, values.preview ? new PreviewServer(session, port) : undefined, {
         recover: Boolean(values.recover), discardOnExit: Boolean(values['discard-unsaved']),
         recoveryCommand: `svg-editor --recover --recovery-dir ${JSON.stringify(recoveryDirectory)}`,
-      });
+        terminalPreview: Boolean(values['terminal-preview']),
+      }, view);
       const terminate = () => { process.exitCode = 143; terminal.close(); };
       process.once('SIGTERM', terminate);
       try {

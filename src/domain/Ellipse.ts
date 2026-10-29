@@ -1,7 +1,9 @@
 import { GeometryShape } from './GeometryShape.js';
+import type { ShapeVisitor } from './ShapeVisitor.js';
 
 export class Ellipse extends GeometryShape {
   readonly type = 'ellipse';
+  override accept(visitor: ShapeVisitor): void { visitor.ellipse(this); }
   constructor(id: string, cx: number, cy: number, rx: number, ry: number) {
     super(id, { cx, cy, rx, ry }, ['cx'], ['cy'], ['rx', 'ry']);
   }

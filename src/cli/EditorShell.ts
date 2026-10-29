@@ -3,11 +3,13 @@ import type { Preview } from '../application/ports/Preview.js';
 import type { RecoveryStore } from '../application/ports/RecoveryStore.js';
 import type { Terminal } from '../application/ports/Terminal.js';
 import type { Cli } from './Cli.js';
+import { TerminalView } from '../application/TerminalView.js';
 
 interface ShellOptions {
   readonly recover?: boolean;
   readonly discardOnExit?: boolean;
   readonly recoveryCommand?: string;
+  readonly terminalPreview?: boolean;
 }
 
 /** Terminal workflow; state changes stay in commands and the application session. */
@@ -16,7 +18,7 @@ export class EditorShell {
   private backedUp = false;
   constructor(private readonly session: EditorSession, private readonly terminal: Terminal,
     private readonly cli: Cli, private readonly recovery?: RecoveryStore, private readonly preview?: Preview,
-    private readonly options: ShellOptions = {}) {}
+    private readonly options: ShellOptions = {}, private readonly terminalView = new TerminalView(terminal)) {}
 
   async run(): Promise<number> {
     try {
@@ -33,9 +35,11 @@ export class EditorShell {
         else this.terminal.writeError(address);
       }
       let code = 0;
+      if (this.options.terminalPreview && this.session.hasDocument) this.printView();
       while (true) {
         const line = await this.terminal.readLine('svg> ');
         if (line === undefined) break;
+        const revision = this.session.revision;
         const result = await this.cli.execute(line);
         await this.checkpoint();
         for (const message of result.output) this.terminal.writeLine(message);
@@ -47,6 +51,7 @@ export class EditorShell {
           if (!await this.clearDraft()) code = 1;
           return code;
         }
+        if (this.options.terminalPreview && this.session.revision !== revision) this.printView();
       }
       if (this.options.discardOnExit) {
         if (!await this.clearDraft()) code = 1;
@@ -64,6 +69,10 @@ export class EditorShell {
       await this.preview?.stop();
       this.terminal.close();
     }
+  }
+
+  private printView(): void {
+    for (const line of this.terminalView.render(this.session.previewSnapshot())) this.terminal.writeLine(line);
   }
 
   private async checkpoint(): Promise<boolean> {

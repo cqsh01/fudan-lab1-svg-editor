@@ -10,6 +10,8 @@ import { FrontCommand } from '../application/commands/FrontCommand.js';
 import { GroupCommand } from '../application/commands/GroupCommand.js';
 import { ExitCommand } from '../application/commands/ExitCommand.js';
 import { StatusCommand } from '../application/commands/StatusCommand.js';
+import { ViewCommand } from '../application/commands/ViewCommand.js';
+import { TerminalView } from '../application/TerminalView.js';
 import { HelpCommand } from '../application/commands/HelpCommand.js';
 import { InitCommand } from '../application/commands/InitCommand.js';
 import { MoveCommand } from '../application/commands/MoveCommand.js';
@@ -33,7 +35,7 @@ interface CommandDefinition {
 /** The only command-name dispatch. The registry also supplies help, avoiding drift. */
 export class CommandParser {
   private readonly definitions = new Map<string, CommandDefinition>();
-  constructor(private readonly factory = new ShapeFactory(), private readonly tokenizer = new Tokenizer()) {
+  constructor(private readonly factory = new ShapeFactory(), private readonly tokenizer = new Tokenizer(), view = new TerminalView()) {
     this.register('init', 'init [w] [h]', args => {
       this.arity(args, 0, 2, 'init [w] [h]');
       return new InitCommand(this.number(args, 0, 'width', 800), this.number(args, 1, 'height', 600));
@@ -107,6 +109,10 @@ export class CommandParser {
       this.arity(args, 0, 0, 'status');
       return new StatusCommand();
     });
+    this.register('view', 'view', args => {
+      this.arity(args, 0, 0, 'view');
+      return new ViewCommand(view);
+    });
     this.register('exit', 'exit', args => {
       this.arity(args, 0, 0, 'exit');
       return new ExitCommand();
@@ -135,6 +141,7 @@ export class CommandParser {
       'Set: fill / stroke / stroke-width, own geometry, text content.',
       'Quotes: \\" / \\\\ / \\n / \\t / \\r. A line starting with # is a comment.',
       'File paths keep backslashes literally; do not double Windows separators.',
+      'Use view for the current canvas; --terminal-preview prints a view after changes.',
       'IO commands clear history; canvas without arguments only displays size.', 'Use status to inspect unsaved changes. Use exit to close, or Ctrl+D to keep a recovery draft.'];
   }
   private create(input: readonly Token[]): CreateCommand {

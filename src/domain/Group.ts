@@ -1,8 +1,10 @@
 import { Numbers } from './Numbers.js';
 import { Shape } from './Shape.js';
+import type { ShapeVisitor } from './ShapeVisitor.js';
 
 export class Group extends Shape {
   readonly type = 'g';
+  override accept(visitor: ShapeVisitor): void { visitor.group(this); }
   private readonly items: Shape[] = [];
   constructor(id: string) { super(id); }
   override get children(): readonly Shape[] { return [...this.items]; }

@@ -1,8 +1,10 @@
 import { GeometryShape } from './GeometryShape.js';
 import { Shape } from './Shape.js';
+import type { ShapeVisitor } from './ShapeVisitor.js';
 
 export class Text extends GeometryShape {
   readonly type = 'text';
+  override accept(visitor: ShapeVisitor): void { visitor.text(this); }
   override get creationStyle(): undefined { return undefined; }
   private content: string;
   constructor(id: string, x: number, y: number, content: string) {
