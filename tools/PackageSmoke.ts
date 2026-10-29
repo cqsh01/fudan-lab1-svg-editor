@@ -33,7 +33,7 @@ export class PackageSmoke {
       assert.equal(this.command(process.execPath, [main], 'init 400 300\n'), 'canvas 400x300 created\n');
       await this.fileWorkflow(directory, main, bin);
       await assert.rejects(() => access(join(prefix, 'node_modules/typescript')));
-      console.log(`Package check passed: clean installation, ${process.platform === 'win32' ? 'cmd.exe/.cmd' : 'executable'}, help, version, native file paths, Unicode, CRLF, and failure exit code.`);
+      console.log(`Package check passed: clean installation, ${process.platform === 'win32' ? 'cmd.exe/.cmd' : 'executable'}, help, version, native file paths, Unicode, CRLF, terminal preview, and failure exit code.`);
     } finally { await rm(directory, { recursive: true, force: true }); }
   }
 
@@ -42,10 +42,14 @@ export class PackageSmoke {
     const output = join(directory, '输出 diagram.svg');
     const script = join(directory, '中文 编辑.commands');
     await writeFile(input, '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect id="card" x="10" y="20" width="100" height="50"/><text id="label" x="20" y="40">原始</text></svg>', 'utf8');
-    const commands = [`read "${input}"`, String.raw`set label text "中文 & <SVG> \"quoted\""`, 'move card 5 0', `save "${output}"`, 'exit'].join('\r\n') + '\r\n';
+    const commands = [`read "${input}"`, String.raw`set label text "中文 & <SVG> \"quoted\""`, 'move card 5 0', 'view', `save "${output}"`, 'exit'].join('\r\n') + '\r\n';
     await writeFile(script, commands, 'utf8');
     const transcript = process.platform === 'win32' ? this.cmd(bin, '< "%LAB1_SVG_SCRIPT%"', script) : this.command(process.execPath, [main], commands);
     assert.match(transcript, /rect#card moved by \(5,0\)/);
+    assert.match(transcript, /Canvas 400 x 300 \| unsaved \| 2 elements/);
+    const automatic = process.platform === 'win32' ? this.cmd(bin, '--terminal-preview < "%LAB1_SVG_SCRIPT%"', script)
+      : this.command(process.execPath, [bin, '--terminal-preview'], commands);
+    assert.match(automatic, /Canvas 400 x 300 \| saved \| 2 elements/);
     const saved = await readFile(output, 'utf8');
     assert.match(saved, /x="15"/);
     assert.match(saved, /中文 &amp; &lt;SVG/);
