@@ -1,0 +1,71 @@
+@startuml
+skinparam backgroundColor #F7F9FC
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam ArrowColor #5B8C7C
+skinparam classBackgroundColor #FFFFFF
+skinparam classBorderColor #133F4B
+skinparam classFontColor #133F4B
+hide empty members
+left to right direction
+class ViewCommand {
+  + execute(session)
+}
+class EditorShell {
+  - printView()
+}
+class EditorSession {
+  + previewSnapshot()
+}
+class TerminalView {
+  + render(snapshot) : string[]
+}
+interface Terminal {
+  + columns : number
+  + rows : number
+}
+class CharacterRenderer {
+  - style : inherited paint
+  + draw(shapes)
+  + rect(shape)
+  + circle(shape)
+  + ellipse(shape)
+  + line(shape)
+  + text(shape)
+  + group(shape)
+}
+interface ShapeVisitor
+abstract class Shape {
+  + accept(visitor)
+}
+class Group {
+  + children : Shape[]
+}
+class CharacterCanvas {
+  - cells : string[][]
+  + rectangle(...)
+  + ellipse(...)
+  + line(...)
+  + text(...)
+  + render() : string[]
+}
+class TerminalText {
+  + glyphs(content)
+}
+ViewCommand --> EditorSession : read snapshot
+EditorShell --> EditorSession : read snapshot
+ViewCommand --> TerminalView : manual
+EditorShell --> TerminalView : automatic after revision
+TerminalView --> Terminal : current dimensions
+TerminalView ..> CharacterRenderer : create per view
+TerminalView ..> CharacterCanvas : create bounded grid
+CharacterRenderer ..|> ShapeVisitor
+CharacterRenderer --> Shape : accept(this)
+Shape ..> ShapeVisitor : polymorphic callback
+Shape <|-- Group
+Group "1" *-- "0..*" Shape : ordered children
+CharacterRenderer --> CharacterCanvas : paint in document order
+CharacterCanvas *-- TerminalText : safe / wide glyphs
+note bottom of CharacterRenderer : Group recurses with inherited paint.\nNo shape-name dispatch; no mutation.
+note bottom of CharacterCanvas : ASCII outlines; dot fills; clipped grid.\nApproximate layout, not exact SVG styling.
+@enduml

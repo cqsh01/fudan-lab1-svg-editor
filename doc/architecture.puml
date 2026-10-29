@@ -14,13 +14,14 @@ package "CLI" {
 }
 package "Application" {
   component "EditorSession\nCommands / History" as App
+  component "TerminalView\nCharacterRenderer / CharacterCanvas\nTerminalText" as CharView
   interface "SvgStore" as Svg
   interface "RecoveryStore" as Draft
   interface "Terminal" as Term
   interface "Preview" as View
   interface "PreviewSource" as Source
 }
-component "Domain\nShape / Group / SvgDocument" as Domain
+component "Domain\nShape / Group / SvgDocument\nShapeVisitor" as Domain
 package "Infrastructure" {
   component "FileSvgStore\nSvgCodec" as IO
   component "FileRecoveryStore\nAtomicFileWriter" as Recovery
@@ -33,6 +34,10 @@ CommandUI --> App : execute
 CommandUI --> Term
 CommandUI --> Draft : checkpoint
 CommandUI --> View : start / stop
+CommandUI --> CharView
+App --> CharView : ViewCommand
+CharView --> Domain : visit snapshot shapes
+CharView --> Term : read dimensions
 App --> Domain
 App --> Svg
 App ..|> Source

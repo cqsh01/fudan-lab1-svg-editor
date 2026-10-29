@@ -1,8 +1,10 @@
 # Lab 1 · SVG 编辑器技术文档
 
-仓库：[cqsh01/fudan-lab1-svg-editor](https://github.com/cqsh01/fudan-lab1-svg-editor)（私有）。当前版本 **0.2.1**；本轮修订日期 **2026-10-28**。原始要求保留在 `phase_cli_1.md`。
+仓库：[cqsh01/fudan-lab1-svg-editor](https://github.com/cqsh01/fudan-lab1-svg-editor)（私有）。当前版本 **0.3.0**；本轮修订日期 **2026-10-29**。原始要求保留在 `phase_cli_1.md`。
 
 本次 Lab1 对应已发布的 Phase 1 CLI 要求。0.2.0 在原有六种图元和全部编辑命令之上，增加安装入口、未保存保护与恢复、只读预览。设计目标是让使用者可以独立启动、确认修改结果，并在操作失误或进程中断后找回已备份内容。它没有增加鼠标编辑或插件系统。0.2.1 修复原生 Windows 路径与文本转义混用的问题，并补充真实 CMD 入口验收。
+
+0.3.0 增加 `view` 与 `--terminal-preview`，用于在终端确认当前画布。该功能于 10/28 实现并按要求留在本地，10/29 经用户授权复核后提交。原有 Phase 1 编辑语义保持。
 
 ## 架构方案
 
@@ -10,8 +12,8 @@
 
 | 模块 | 当前职责 | 允许依赖 |
 | --- | --- | --- |
-| `src/domain` | 图形几何、样式、树结构、唯一 id；文档克隆及内容比较 | 本模块，不依赖 Node、XML、终端或 HTTP |
-| `src/application` | Command、编辑历史、会话、保存基线、修改版本；IO 端口 | domain、本模块 |
+| `src/domain` | 图形几何、样式、树结构、唯一 id；文档克隆及内容比较、只读 ShapeVisitor 协议 | 本模块，不依赖 Node、XML、终端或 HTTP |
+| `src/application` | Command、编辑历史、会话、保存基线、修改版本；字符渲染和 IO 端口 | domain、本模块 |
 | `src/cli` | 分词、命令构造、交互编排、未保存确认、启动帮助；Main 装配依赖 | application、domain、本模块；只有 Main 导入基础设施或 Node |
 | `src/infrastructure` | SVG 编解码、原子文件写入、草稿、终端、HTTP 预览和页面 | application 的端口、domain、本模块、Node/XML 库 |
 | `test` | 领域、应用、CLI、保护、恢复、预览、入口和架构检查 | 产品模块与测试运行时 |
@@ -29,16 +31,18 @@ PlantUML 图源：[architecture.puml](architecture.puml)。完整[关系视图�
 - EditCommand 保存执行前后快照，CommandHistory 管理 past / future。失败候选不会进入当前文档或历史。
 - EditorShell 接收 Terminal、RecoveryStore、Preview 端口；Cli 接收可选 UnsavedChangesGuard。原有纯命令调用和普通脚本不需要确认交互。
 - EditorSession 实现 PreviewSource，PreviewServer 只取得防御性副本。浏览器仅获取状态和 SVG，无法通过预览服务调用编辑命令。
+- ViewCommand 与 EditorShell 复用 TerminalView，从会话取得 PreviewSnapshot。CharacterRenderer 通过 Shape.accept/ShapeVisitor 访问具体几何，递归组合并继承样式；CharacterCanvas 负责裁剪、字符栅格与遮挡，TerminalText 负责安全文字和常见宽字符。
 - FileSvgStore 与 FileRecoveryStore 复用 AtomicFileWriter，文件写入仍隔离在基础设施层。
 
 ### 设计模式的选择与落地
 
 | 模式 / 原则 | 代码落点 | 选择理由与边界 |
 | --- | --- | --- |
-| **Command（必需）** | Command、EditCommand、独立命令类、CommandHistory | 一次编辑一个撤销单元；新增 status、exit 也通过同一注册点构造 |
+| **Command（必需）** | Command、EditCommand、独立命令类、CommandHistory | 一次编辑一个撤销单元；status、exit、view 也通过同一注册点构造 |
 | **Composite** | Shape、GeometryShape、六种图形、Group | 命令通过统一操作处理容器和叶子，禁止在每个命令中枚举类型 |
 | **Memento** | EditCommand.before / after、SvgDocument.clone | 精确恢复浮点与树结构；每条历史 O(n) 空间，暂不引入增量补丁 |
 | **Factory** | ShapeFactory | 图形名唯一分派点，CLI 与 XML 读取共用 |
+| **Visitor** | Shape.accept、ShapeVisitor、CharacterRenderer | 字符绘制通过多态进入对应图形方法，不新增类型名分派；新增图元需同时扩展 visitor，适合当前固定的六类型集合 |
 | **端口与适配器** | SvgStore、RecoveryStore、Terminal、Preview、PreviewSource | 命令和会话不直接读文件或启动服务；在测试中替换 IO |
 | **依赖注入** | Main | 唯一组合根选择终端、草稿、预览实现，不把平台行为放进领域类 |
 
@@ -108,6 +112,18 @@ EditorShell 在成功修改后、打印下一次提示符前更新草稿。写�
 
 获取预览只克隆文档并编码，不调用 save、不改变 dirty 或历史。会话结束关闭 HTTP 服务，页面显示连接结束并保留最后画面。界面截图见 [preview.png](preview.png)。
 
+### 终端字符预览
+
+`view` 是只读 Command，渲染当前整张画布；没有文档时提示先 init/read。`--terminal-preview` 让 EditorShell 在 revision 改变后、下一次提示符前输出预览。成功读取/保存/调整尺寸、编辑与 undo/redo 均覆盖；启动恢复后显示当前内容。查询、取消、失败命令没有版本变化，不额外刷新。普通 stdin 默认不输出预览；显式开启时也可用于脚本记录。
+
+TerminalView 获取终端的实时 columns/rows，无 TTY 时使用 80×24。网格最大 118 列、40 行，预留边框和说明空间；按字符宽高约 1:2 适配 SVG 整体比例。所有坐标仅在副本上读取；栅格循环有界，极端有限坐标不会按坐标长度逐点遍历。
+
+CharacterRenderer 按文档顺序访问所有图元。Group 递归传递 fill/stroke/stroke-width，子元素覆盖父样式，none/transparent 不绘制对应油漆。后绘制的填充覆盖前面的图形与文字；front/back 会改变效果。矩形/圆/椭圆的填充用点表示，轮廓用 ASCII 标识，线条保持实际方向，不添加箭头。越界部分裁剪，零尺寸区域不显示。
+
+文本按 SVG 基线近似放置，折叠普通空白，保留常见中文与组合字符。TerminalText 去除终端控制符与双向控制字符，常见 CJK/emoji 按两格计算，重绘半个宽字符时清理整个旧字符，防止边框错位。终端字体、复杂字符、极端坐标、低分辨率与文字长度仍可能产生近似误差。
+
+字符画不编码颜色、精确字形或描边宽度，填充轮廓也用边界字符辅助辨认；极小图形可能合并。输出是普通文本，不使用 ANSI 重画、全屏界面或终端专用图像协议。需要精确 SVG 时同时使用 --preview。对应[渲染关系图](terminal-preview.svg)与[回放实例](../examples/terminal.transcript.txt)随代码同步。
+
 ### SVG 支持边界
 
 输出为 UTF-8 标准 SVG，带 namespace、width、height 和与画布一致的 viewBox。输入覆盖六种图元、g 嵌套、各自几何属性以及 fill/stroke/stroke-width；文本是子文本，省略几何采用 0 初值。
@@ -132,6 +148,9 @@ transform、style/CSS、字体属性、path/use/defs、tspan、非等比例 view
 | 10/28 · 预览 | 手动保存看效果会触发课程历史屏障 | 通过 PreviewSource 读取内存副本；实际浏览器验证刷新、撤销后的 saved 状态和大小切换 |
 | 10/28 · 路径修复 | 复查发现双引号内的 Windows 路径被统一文本解码；旧 Windows 包检查只直接调用 JS | Token 保留词法原文，read/save 选择路径值；新增盘符、UNC、中文空格和文本回归，并通过 cmd.exe 运行已安装 .cmd 与 CRLF 脚本 |
 | 10/28 · 验证修订 | fetch 会改写测试中的 Host，旧架构正则也扫描到模板内 JS | 使用原始 HTTP 请求验证 Host；页面代码整理为可读模板，保留架构扫描能力边界 |
+| 10/28 · 终端预览 | 用户希望直接在 CMD 查看当前图形，并确认示例不能凭空增加流程节点 | 增加只读 view 和 opt-in 自动预览；Visitor 避免第三处图形名分派；同步关系图、UML 和本地验收，按要求暂不提交或推送 |
+
+| 10/29 · 复核与提交 | 用户授权再次检查，无问题后推送 | 类型检查、54 项功能检查、干净前缀安装包与示例回放通过；同步 0.3.0 文档，推送后由 Windows/Linux CI 继续验收 |
 
 这些是实际对话、实现和检查记录，未代写未经发生的用户试用反馈。分步 Git 提交体现推进过程；同一场会话中的多次提交不等于多次课堂评审。
 
@@ -144,6 +163,7 @@ transform、style/CSS、字体属性、path/use/defs、tspan、非等比例 view
 - Main 是唯一组合根；EditorShell 和 UnsavedChangesGuard 不导入文件系统或 HTTP。
 - PreviewServer 只依赖 PreviewSource 端口，不直接依赖 EditorSession；草稿与保存复用基础设施内部 AtomicFileWriter。
 - Token 从接口改为不可变值对象，只负责参数表示与两种取值策略；CLI 模块方向与两个名字分派点保持不变。
+- 新增 ShapeVisitor 接口与各图形 accept；领域层只依赖本模块协议。TerminalView/CharacterRenderer/CharacterCanvas/TerminalText 位于 application，终端尺寸经 Terminal 注入，无 Node 或 XML 依赖。
 - 发布校验放在 tools，不把开发工具带入安装包；用户现有 demo.svg 不修改、不提交、不打包。
 
 依赖规则由 architecture.test.ts 检查。人工抽查：MoveCommand → EditCommand/SvgDocument；EditorSession → SvgStore/PreviewSource；EditorShell → 应用端口；FileRecoveryStore → RecoveryStore/SvgCodec/AtomicFileWriter；PreviewServer → Preview/PreviewSource/SvgCodec/PreviewPage。未发现逆向业务依赖。
@@ -168,7 +188,7 @@ npm run test:package
 
 ## 交付资料
 
-Git 标签保留原始基线 `v0.1.0`、可用性改进版 `v0.2.0` 与路径修复版 `v0.2.1`；课程当前交付标签 `final` 指向经过验证的本轮版本。提交历史保留每个阶段的实际推进，不改写原有提交。
+Git 标签保留原始基线 `v0.1.0`、可用性改进版 `v0.2.0` 与路径修复版 `v0.2.1`。字符预览对应 `v0.3.0`；课程交付标签 `final` 仅在本轮 CI 验证通过后更新。提交历史保留每个阶段的实际推进，不改写原有提交。
 
 
 - [根 README](../README.md)：安装、运行、保存、恢复、预览与脚本使用。

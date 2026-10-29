@@ -2,7 +2,9 @@
 
 一个可以独立安装、支持脚本回放的 SVG 命令行编辑器。使用 TypeScript、Command 与 Composite 模式实现；现在提供未保存保护、恢复草稿和只读实时预览。
 
-**私有仓库：[cqsh01/fudan-lab1-svg-editor](https://github.com/cqsh01/fudan-lab1-svg-editor)** · 当前版本：`0.2.1`
+**私有仓库：[cqsh01/fudan-lab1-svg-editor](https://github.com/cqsh01/fudan-lab1-svg-editor)** · 当前版本：`0.3.0`
+
+0.3.0 增加终端字符预览：可随时执行 view，也可在编辑后自动显示当前画布。
 
 ## 从源码启动
 
@@ -35,11 +37,37 @@ saved to drawing.svg (2 elements)
 
 源码只在构建时编译，`npm run cli` 和已安装的命令均直接运行编译产物。修改 TypeScript 后重新执行 `npm run build`。
 
+## 在终端查看当前图形
+
+在 `svg>` 中输入 `view`，直接查看当前整张 SVG 画布。只画一个矩形时就只显示这个矩形；图形、文字和线条全部来自当前文档。
+
+```text
+svg> init 400 200
+svg> create rect card 80 60 200 80 none
+svg> set card stroke black
+svg> view
+```
+
+编辑后自动打印预览：
+
+```sh
+npm run build
+npm run cli -- --terminal-preview
+```
+
+成功新建、读取、编辑、调整画布、撤销、重做或保存后，会在下一次提示符前打印新画面；恢复启动也会显示恢复的画布。可同时启用 `--preview`，用浏览器确认精确效果。
+
+字符边框使用 `+ - | / \\`，填充用 `.`；图形按 SVG 的位置、组合、样式继承和层叠顺序绘制。画布适应当前终端尺寸，按字符宽高约 1:2 保持整体比例，超出画布的内容裁剪。文字支持常见中文双格宽度。
+
+这是布局近似：不区分颜色，描边统一近似为一格，文字位置/字号与曲线会有误差，极小图形可能合并，字体和 emoji 的实际宽度也受终端影响。边框同时表示有填充图形的几何轮廓；无填充且无描边的图形不显示。没有凭空生成的箭头或节点。精确样式使用浏览器预览。
+
+`view` 不保存文件、不修改文档或撤销历史。默认脚本不会插入画面，只有显式 `view` 或 `--terminal-preview` 才输出字符画；使用普通文本输出，无需终端图像协议或光标控制。[单矩形回放](examples/terminal.commands)及其[实际输出](examples/terminal.transcript.txt)可以直接核对。
+
 ## 安装打包版本
 
 ```sh
 npm run package
-npm install --global ./lab1-svg-editor-0.2.1.tgz
+npm install --global ./lab1-svg-editor-0.3.0.tgz
 svg-editor --help
 svg-editor --preview
 ```
@@ -62,6 +90,7 @@ svg-editor --preview
 | `-h` / `--help` | 显示使用说明并退出 |
 | `-v` / `--version` | 显示安装版本并退出 |
 | `--preview` | 启动本会话的只读实时预览 |
+| `--terminal-preview` | 文档更新后在终端打印字符预览，可与浏览器预览同时启用 |
 | `--port <数字>` | 指定预览端口；默认自动选择，0 也表示自动选择 |
 | `--recover` | 显式恢复恢复目录中最近的完整草稿 |
 | `--recovery-dir <目录>` | 选择恢复目录 |
@@ -97,7 +126,7 @@ npm run test:package
 - [验收记录](doc/QA.md)：自动检查与实际终端/浏览器验证。
 - [版本变更](doc/CHANGELOG.md)：本轮改进范围及保留的课程语义。
 
-本轮覆盖三项高优先级可用性改进。六种图元和 Phase 1 约定继续保留，box、插件系统和更广的 SVG 导入范围仍属于后续工作。所有项目文件位于 `lab1/`。
+当前覆盖安装、保护/恢复、浏览器预览和终端字符预览。六种图元和 Phase 1 约定继续保留，box、插件系统和更广的 SVG 导入范围仍属于后续工作。所有项目文件位于 `lab1/`。
 
 ## 文件路径与文本转义
 

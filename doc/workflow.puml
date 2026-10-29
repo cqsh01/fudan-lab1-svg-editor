@@ -11,6 +11,7 @@ participant "Cli / UnsavedChangesGuard" as Cli
 participant EditorSession as Session
 participant "Command / History" as Command
 participant FileRecoveryStore as Draft
+participant TerminalView as CharacterView
 participant PreviewServer as Preview
 actor Browser
 User -> Terminal : input a command
@@ -38,7 +39,15 @@ group when command is allowed
       Shell -> Draft : clear this session's draft
     end
   end
-  Shell -> Terminal : print result, then prompt
+  Shell -> Terminal : print command result
+  opt --terminal-preview AND revision changed
+    Shell -> Session : previewSnapshot()
+    Session --> Shell : defensive copy
+    Shell -> CharacterView : render(snapshot)
+    CharacterView --> Shell : character canvas
+    Shell -> Terminal : print canvas
+  end
+  Shell -> Terminal : next prompt
 end
 loop browser polls while preview is running
   Browser -> Preview : GET state

@@ -1,0 +1,6 @@
+# One actual rectangle; view never adds labels, nodes, or arrows.
+init 400 200
+create rect card 80 60 200 80 none
+set card stroke black
+view
+exit

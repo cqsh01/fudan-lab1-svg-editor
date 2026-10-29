@@ -13,6 +13,7 @@ abstract class Shape {
   + scale(factor)
   + set(attribute, value)
   + clone() : Shape
+  + accept(visitor : ShapeVisitor)
 }
 abstract class GeometryShape
 class Rect
@@ -32,6 +33,8 @@ class SvgDocument {
 }
 Shape <|-- GeometryShape
 Shape <|-- Group
+interface ShapeVisitor
+Shape ..> ShapeVisitor : accept
 GeometryShape <|-- Rect
 GeometryShape <|-- Circle
 GeometryShape <|-- Ellipse
@@ -88,4 +91,13 @@ CommandParser --> Tokenizer : scan
 Tokenizer ..> Token : create
 CommandParser --> Token : choose path / text
 CommandParser ..> Command : construct
+class ViewCommand
+class TerminalView
+class CharacterRenderer
+Command <|-- ViewCommand
+ViewCommand --> TerminalView
+EditorShell --> TerminalView : automatic view
+CommandParser ..> ViewCommand : construct
+TerminalView ..> CharacterRenderer
+CharacterRenderer ..|> ShapeVisitor
 @enduml
