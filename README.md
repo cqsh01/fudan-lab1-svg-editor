@@ -2,7 +2,9 @@
 
 一个可以独立安装、支持脚本回放的 SVG 命令行编辑器。使用 TypeScript、Command 与 Composite 模式实现；现在提供未保存保护、恢复草稿和只读实时预览。
 
-**私有仓库：[cqsh01/fudan-lab1-svg-editor](https://github.com/cqsh01/fudan-lab1-svg-editor)** · 当前版本：`0.3.0`
+**公开仓库：[cqsh01/fudan-lab1-svg-editor](https://github.com/cqsh01/fudan-lab1-svg-editor)** · 当前版本：`0.3.0`
+
+教授与助教可直接通过仓库地址查看、下载或克隆作业，无需登录 GitHub 或申请访问权限。课程交付入口为 [`final` 标签](https://github.com/cqsh01/fudan-lab1-svg-editor/tree/final)，正式技术文档位于 [doc/README.md](doc/README.md)。
 
 0.3.0 增加终端字符预览：可随时执行 view，也可在编辑后自动显示当前画布。
 
@@ -72,7 +74,7 @@ svg-editor --help
 svg-editor --preview
 ```
 
-包中包含编译产物、运行依赖声明、文档和示例；安装包使用者不需要 TypeScript。仓库为私有仓库，当前通过本地 tarball 分发，尚未发布到 npm 公共注册表。
+包中包含编译产物、运行依赖声明、文档和示例；安装包使用者不需要 TypeScript。GitHub 仓库公开，安装包通过本地 tarball 分发，尚未发布到 npm 公共注册表。package.json 的 `private: true` 用于禁止 npm 发布，与 GitHub 仓库可见性独立。
 
 ## 保存、退出和恢复
 
